@@ -14,19 +14,52 @@ class App extends React.Component {
 
   async fetchData () {
     console.log('fetching data...')
-    const [error, { data }] = await to(http.get(subjectsIssue.apiUrl()))
-    if (error) {
-      console.log('error:', error)
-      del('subjects')
-      return
+    const fetchDataInternal = async (url) => {
+      if (!url) {
+        return
+      }
+
+      const [error, { data, xhr }] = await to(http.get(url))
+      if (error) {
+        console.log('error:', error)
+        return
+      }
+
+
+      const { subjects } = this.state
+      console.log('subjects', subjects)
+      this.setSubjects(subjects.concat(
+        sort(normalizeData(data))
+      ), { shouldUpdateCache: true })
+
+      const linkHeader = xhr.getResponseHeader('link')
+      if (!linkHeader) {
+        return
+      }
+      const nextUrl = this.getNextUrl(linkHeader)
+      fetchDataInternal(nextUrl)
     }
 
-    this.setSubjects(sort(normalizeData(data)), { shouldUpdateCache: true })
+    await del('subjects')
+    this.setState({ subjects: [] })
+    const firstUrl = this.getNextUrl()
+    fetchDataInternal(firstUrl)
+  }
+
+  getNextUrl (link) {
+    if (!link) {
+      return subjectsIssue.apiUrl()
+    }
+
+    const nextUrl = link.split(',').find(l => l.includes('rel="next"'))
+    return nextUrl
+      ? nextUrl.trim().replace(/^<(.+)>.+$/, '$1')
+      : null
   }
 
   setSubjects (subjects, { shouldUpdateCache } = {}) {
     console.log('set subjects on state')
-    this.setState({ subjects })
+    this.setState(() => ({ subjects }))
     if (shouldUpdateCache) {
       console.log('update subjects on cache')
       set('subjects', subjects)
@@ -47,10 +80,6 @@ class App extends React.Component {
     }
   }
 
-  componentDidUpdate () {
-    set('subjects', this.state.subjects)
-  }
-
   render () {
     const updateList = () => this.updateList()
     const { subjects } = this.state
@@ -64,6 +93,7 @@ class App extends React.Component {
           href={subjectsIssue.url()}
           rel='noopener noreferrer'
           target='_blank'
+          style={{ marginRigh: 10 }}
         >
           Escolha ou vote em um assunto
         </a>
@@ -72,7 +102,6 @@ class App extends React.Component {
           onClick={updateList}
           className='button button-outline'
           style={{
-            marginLeft: 10,
             position: 'relative',
             top: 1
           }}
@@ -115,7 +144,7 @@ const subjectsIssue = {
 function normalizeData (data) {
   const normalizedData = data.map((item) => ({
     id: item.id,
-    title: item.body.replace(/\[(.+)\].+/, '$1'),
+    title: item.body.replace(/\[(.+)(?:\s+)?\].+/, '$1'),
     votes: item.reactions['+1']
   }))
 

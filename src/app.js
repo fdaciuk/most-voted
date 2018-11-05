@@ -93,7 +93,7 @@ class App extends React.Component {
           href={subjectsIssue.url()}
           rel='noopener noreferrer'
           target='_blank'
-          style={{ marginRigh: 10 }}
+          style={{ marginRight: 10 }}
         >
           Escolha ou vote em um assunto
         </a>

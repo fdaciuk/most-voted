@@ -1,21 +1,23 @@
-import React, { Fragment } from 'react'
+import React, { useState, useEffect } from 'react'
 import { get, set, del } from 'idb-keyval'
+import ListOfSubjects from './list-of-subjects'
 import { http, to } from './utils'
+
 import 'milligram'
 
-class App extends React.Component {
-  state = {
-    subjects: []
+function App () {
+  const [subjects, setSubjects] = useState(() => [])
+
+  function updateList () {
+    fetchData()
   }
 
-  updateList () {
-    this.fetchData()
-  }
-
-  async fetchData () {
+  async function fetchData () {
     console.log('fetching data...')
     const fetchDataInternal = async (url) => {
       if (!url) {
+        console.log('acabou tudo! Agora vamos organizar essa parada :D', subjects)
+        setSubjectsOnStateAndIDB(sort(subjects), { shouldUpdateCache: true })
         return
       }
 
@@ -25,28 +27,28 @@ class App extends React.Component {
         return
       }
 
-
-      const { subjects } = this.state
       console.log('subjects', subjects)
-      this.setSubjects(subjects.concat(
-        sort(normalizeData(data))
-      ), { shouldUpdateCache: true })
+      setSubjectsOnStateAndIDB(
+        subjects.concat(normalizeData(data)),
+        { shouldUpdateCache: true }
+      )
 
       const linkHeader = xhr.getResponseHeader('link')
       if (!linkHeader) {
         return
       }
-      const nextUrl = this.getNextUrl(linkHeader)
+      const nextUrl = getNextUrl(linkHeader)
       fetchDataInternal(nextUrl)
     }
 
-    await del('subjects')
-    this.setState({ subjects: [] })
-    const firstUrl = this.getNextUrl()
+    await del(subjectsIssue.path)
+    setSubjects([])
+
+    const firstUrl = getNextUrl()
     fetchDataInternal(firstUrl)
   }
 
-  getNextUrl (link) {
+  function getNextUrl (link) {
     if (!link) {
       return subjectsIssue.apiUrl()
     }
@@ -57,79 +59,44 @@ class App extends React.Component {
       : null
   }
 
-  setSubjects (subjects, { shouldUpdateCache } = {}) {
+  function setSubjectsOnStateAndIDB (subjects, { shouldUpdateCache } = {}) {
     console.log('set subjects on state')
-    this.setState(() => ({ subjects }))
+    setSubjects(subjects)
+
     if (shouldUpdateCache) {
       console.log('update subjects on cache')
-      set('subjects', subjects)
+      set(subjectsIssue.path, subjects)
     }
   }
 
-  async componentDidMount () {
-    const [errorGettingSubjects, subjectsFromCache] = await to(get('subjects'))
-    if (errorGettingSubjects || !subjectsFromCache) {
-      console.log('errorGettingSubjects?', errorGettingSubjects)
-      console.log('Does not have subjects from cache :\\', subjectsFromCache)
-      return this.fetchData()
+  useEffect(() => {
+    async function effect () {
+      const [errorGettingSubjects, subjectsFromCache] = await to(get(subjectsIssue.path))
+      if (errorGettingSubjects || !subjectsFromCache) {
+        console.log('errorGettingSubjects?', errorGettingSubjects)
+        console.log('Does not have subjects from cache :\\', subjectsFromCache)
+        return fetchData()
+      }
+
+      if (subjectsFromCache) {
+        console.log('Has subjects on cache. Does not need to request them.')
+        return setSubjectsOnStateAndIDB(subjectsFromCache)
+      }
     }
 
-    if (subjectsFromCache) {
-      console.log('Has subjects on cache. Does not need to request them.')
-      return this.setSubjects(subjectsFromCache)
-    }
-  }
+    effect()
+  }, [])
 
-  render () {
-    const updateList = () => this.updateList()
-    const { subjects } = this.state
 
-    return (
-      <Fragment>
-        <h1>React Conf 2019</h1>
-        <h2>Assuntos mais votados:</h2>
 
-        <a
-          className='button'
-          href={subjectsIssue.url()}
-          rel='noopener noreferrer'
-          target='_blank'
-          style={{ marginRight: 10 }}
-        >
-          Escolha ou vote em um assunto
-        </a>
-
-        <button
-          onClick={updateList}
-          className='button button-outline'
-          style={{
-            position: 'relative',
-            top: 1
-          }}
-        >
-          Atualizar lista (limpar cache)
-        </button>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Votos</th>
-              <th>Assunto</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {subjects.map((subject) => (
-              <tr key={subject.id}>
-                <td>{subject.votes}</td>
-                <td>{subject.title}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Fragment>
-    )
-  }
+  return (
+    <ListOfSubjects
+      eventName='React Conf 2019'
+      subjects={subjects}
+      issueUrl={subjectsIssue.url()}
+      updateList={updateList}
+    />
+  )
 }
 
 const subjectsIssue = {

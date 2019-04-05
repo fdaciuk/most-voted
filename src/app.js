@@ -1,118 +1,32 @@
-import React, { useState, useEffect } from 'react'
-import { get, set, del } from 'idb-keyval'
-import ListOfSubjects from './list-of-subjects'
-import { http, to } from './utils'
+import React, { useState, useEffect, Suspense } from 'react'
 
 import 'milligram'
 
+const MainPage = React.lazy(() => import('pages/main'))
+const RegisterSubject = React.lazy(() => import('pages/register-subject'))
+
 function App () {
-  const [subjects, setSubjects] = useState(() => [])
-
-  async function fetchData () {
-    console.log('fetching data...')
-    let tempSubjects = []
-    const fetchDataInternal = async (url) => {
-      if (!url) {
-        console.log(`Now let's organize all data :D`, tempSubjects)
-        setSubjectsOnStateAndIDB(sort(tempSubjects), { shouldUpdateCache: true })
-        return
-      }
-
-      const [error, { data, xhr }] = await to(http.get(url))
-      if (error) {
-        console.log('error:', error)
-        return
-      }
-
-      console.log('tempSubjects', tempSubjects)
-      tempSubjects = tempSubjects.concat(normalizeData(data))
-
-      const linkHeader = xhr.getResponseHeader('link')
-      if (!linkHeader) {
-        return
-      }
-      const nextUrl = getNextUrl(linkHeader)
-      fetchDataInternal(nextUrl)
-    }
-
-    await del(subjectsIssue.path)
-    setSubjects([])
-
-    const firstUrl = getNextUrl()
-    fetchDataInternal(firstUrl)
-  }
-
-  function getNextUrl (link) {
-    if (!link) {
-      return subjectsIssue.apiUrl()
-    }
-
-    const nextUrl = link.split(',').find(l => l.includes('rel="next"'))
-    return nextUrl
-      ? nextUrl.trim().replace(/^<(.+)>.+$/, '$1')
-      : null
-  }
-
-  function setSubjectsOnStateAndIDB (subjects, { shouldUpdateCache } = {}) {
-    console.log('set subjects on state')
-    setSubjects(subjects)
-
-    if (shouldUpdateCache) {
-      console.log('update subjects on cache')
-      set(subjectsIssue.path, subjects)
-    }
-  }
+  const [issue, setIssue] = useState(null)
 
   useEffect(() => {
-    async function effect () {
-      const [errorGettingSubjects, subjectsFromCache] = await to(get(subjectsIssue.path))
-      if (errorGettingSubjects || !subjectsFromCache) {
-        console.log('errorGettingSubjects?', errorGettingSubjects)
-        console.log('Does not have subjects from cache :\\', subjectsFromCache)
-        return fetchData()
-      }
-
-      if (subjectsFromCache) {
-        console.log('Has subjects on cache. Does not need to request them.')
-        return setSubjectsOnStateAndIDB(subjectsFromCache)
-      }
-    }
-
-    effect()
+    setIssue(getIssueUrl(window.location.search))
   }, [])
 
   return (
-    <ListOfSubjects
-      eventName='React Conf 2019'
-      subjects={subjects}
-      issueUrl={subjectsIssue.url()}
-      updateList={fetchData}
-    />
+    <Suspense fallback='Carregando...'>
+        {!issue && <RegisterSubject />}
+        {issue && <MainPage issue={issue} />}
+    </Suspense>
   )
 }
 
-const subjectsIssue = {
-  path: `react-brasil/reactconfbr/issues/24`,
-  url () {
-    return `https://github.com/${this.path}`
-  },
-  apiUrl () {
-    return `https://api.github.com/repos/${this.path}/comments`
+function getIssueUrl (search) {
+  if (!search) {
+    return null
   }
-}
 
-function normalizeData (data) {
-  const normalizedData = data.map((item) => ({
-    id: item.id,
-    title: item.body.replace(/\[(.+)(?:\s+)?\].+/, '$1'),
-    votes: item.reactions['+1']
-  }))
-
-  return normalizedData
-}
-
-function sort (data) {
-  return Array.from(data).sort((a, b) => b.votes - a.votes)
+  return decodeURIComponent(search)
+    .replace(/\?issueUrl=.+github\.com\/(.+)$/, '$1')
 }
 
 export default App

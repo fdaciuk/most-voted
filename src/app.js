@@ -13,7 +13,7 @@ function App () {
     let tempSubjects = []
     const fetchDataInternal = async (url) => {
       if (!url) {
-        console.log('acabou tudo! Agora vamos organizar essa parada :D', tempSubjects)
+        console.log(`Now let's organize all data :D`, tempSubjects)
         setSubjectsOnStateAndIDB(sort(tempSubjects), { shouldUpdateCache: true })
         return
       }

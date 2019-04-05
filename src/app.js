@@ -8,16 +8,13 @@ import 'milligram'
 function App () {
   const [subjects, setSubjects] = useState(() => [])
 
-  function updateList () {
-    fetchData()
-  }
-
   async function fetchData () {
     console.log('fetching data...')
+    let tempSubjects = []
     const fetchDataInternal = async (url) => {
       if (!url) {
-        console.log('acabou tudo! Agora vamos organizar essa parada :D', subjects)
-        setSubjectsOnStateAndIDB(sort(subjects), { shouldUpdateCache: true })
+        console.log('acabou tudo! Agora vamos organizar essa parada :D', tempSubjects)
+        setSubjectsOnStateAndIDB(sort(tempSubjects), { shouldUpdateCache: true })
         return
       }
 
@@ -27,11 +24,8 @@ function App () {
         return
       }
 
-      console.log('subjects', subjects)
-      setSubjectsOnStateAndIDB(
-        subjects.concat(normalizeData(data)),
-        { shouldUpdateCache: true }
-      )
+      console.log('tempSubjects', tempSubjects)
+      tempSubjects = tempSubjects.concat(normalizeData(data))
 
       const linkHeader = xhr.getResponseHeader('link')
       if (!linkHeader) {
@@ -87,14 +81,12 @@ function App () {
     effect()
   }, [])
 
-
-
   return (
     <ListOfSubjects
       eventName='React Conf 2019'
       subjects={subjects}
       issueUrl={subjectsIssue.url()}
-      updateList={updateList}
+      updateList={fetchData}
     />
   )
 }

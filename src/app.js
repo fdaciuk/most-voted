@@ -86,7 +86,8 @@ class App extends React.Component {
 
     return (
       <Fragment>
-        <h1>Assuntos para React Conf 2019:</h1>
+        <h1>React Conf 2019</h1>
+        <h2>Assuntos mais votados:</h2>
 
         <a
           className='button'

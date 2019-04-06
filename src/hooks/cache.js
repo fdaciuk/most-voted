@@ -11,7 +11,17 @@ function useCache ({
     cacheEntry === undefined ||
     typeof fetchData !== 'function'
   ) {
-    console.warn('[useCache]: cacheEntry and fetchData are required')
+    console.warn(
+      `[useCache]: cacheEntry and fetchData are required
+
+      Usage:
+
+      const [data, setData] = useCache({
+        cacheEntry: 'cache-entry-name', // <String> <required>
+        fetchData: () => {}, // <Function> <required>
+        initialState: '' // <Any> <optional>
+      })`
+    )
     return
   }
 

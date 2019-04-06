@@ -1,5 +1,4 @@
 import React, { useState, useEffect, Suspense } from 'react'
-
 import 'milligram'
 
 const MainPage = React.lazy(() => import('pages/main'))

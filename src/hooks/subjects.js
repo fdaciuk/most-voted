@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react'
-import { get, set, del } from 'idb-keyval'
+import { useCache } from 'hooks'
+import { del } from 'idb-keyval'
 import { http, to } from 'utils'
 import { subjectsIssue } from 'utils'
 
 function useSubjects (issue) {
-  const [subjects, setSubjects] = useState(() => [])
+  const [subjects, setSubjects] = useCache({
+    cacheEntry: issue,
+    initialState: () => [],
+    fetchData
+  })
 
   async function fetchData () {
     console.log('fetching data...')
@@ -12,7 +16,7 @@ function useSubjects (issue) {
     const fetchDataInternal = async (url) => {
       if (!url) {
         console.log(`Now let's organize all data :D`, tempSubjects)
-        setSubjectsOnStateAndIDB(sort(tempSubjects), { shouldUpdateCache: true })
+        setSubjects(sort(tempSubjects))
         return
       }
 
@@ -51,34 +55,6 @@ function useSubjects (issue) {
       ? nextUrl.trim().replace(/^<(.+)>.+$/, '$1')
       : null
   }
-
-  function setSubjectsOnStateAndIDB (subjects, { shouldUpdateCache } = {}) {
-    console.log('set subjects on state')
-    setSubjects(subjects)
-
-    if (shouldUpdateCache) {
-      console.log('update subjects on cache')
-      set(issue, subjects)
-    }
-  }
-
-  useEffect(() => {
-    async function effect () {
-      const [errorGettingSubjects, subjectsFromCache] = await to(get(issue))
-      if (errorGettingSubjects || !subjectsFromCache) {
-        console.log('errorGettingSubjects?', errorGettingSubjects)
-        console.log('Does not have subjects from cache :\\', subjectsFromCache)
-        return fetchData()
-      }
-
-      if (subjectsFromCache) {
-        console.log('Has subjects on cache. Does not need to request them.')
-        return setSubjectsOnStateAndIDB(subjectsFromCache)
-      }
-    }
-
-    effect()
-  }, [])
 
   return { subjects, fetchData }
 }

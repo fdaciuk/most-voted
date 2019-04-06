@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
-import { get, set } from 'idb-keyval'
+import { useCache } from 'hooks'
 import { subjectsIssue } from 'utils'
 import { http, to } from 'utils'
 
 function useEventData (issue) {
-  const [eventName, setEventName] = useState('...')
+  const [eventName, setEventName] = useCache({
+    cacheEntry: `${issue}-eventName`,
+    initialState: '...',
+    fetchData
+  })
   const issueUrl = subjectsIssue.url(issue)
 
   async function fetchData () {
@@ -14,39 +17,8 @@ function useEventData (issue) {
       return
     }
 
-    setSubjectsOnStateAndIDB(
-      data.title.replace('Temas de palestras para a', ''),
-      { shouldUpdateCache: true }
-    )
+    setEventName(data.title.replace('Temas de palestras para a', ''))
   }
-
-  function setSubjectsOnStateAndIDB (eventName, { shouldUpdateCache } = {}) {
-    console.log('set eventName on state')
-    setEventName(eventName)
-
-    if (shouldUpdateCache) {
-      console.log('update subjects on cache')
-      set(`${issue}-eventName`, eventName)
-    }
-  }
-
-  useEffect(() => {
-    async function effect () {
-      const [errorGettingEventData, subjectsFromCache] = await to(get(`${issue}-eventName`))
-      if (errorGettingEventData || !subjectsFromCache) {
-        console.log('errorGettingEventData?', errorGettingEventData)
-        console.log('Does not have eventData from cache :\\', subjectsFromCache)
-        return fetchData()
-      }
-
-      if (subjectsFromCache) {
-        console.log('Has eventData on cache. Does not need to request them.')
-        return setSubjectsOnStateAndIDB(subjectsFromCache)
-      }
-    }
-
-    effect()
-  }, [])
 
   return { eventName, issueUrl }
 }

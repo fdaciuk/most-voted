@@ -13,6 +13,7 @@ por isso ele deve ter o seguinte formato:
 Exemplo:
 
 > Temas de palestras para a React Conf 2019
+
 > Temas de palestras para o Front in Sampa 2019
 
 ## Licença

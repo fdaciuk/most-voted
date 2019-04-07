@@ -17,7 +17,7 @@ function useEventData (issue) {
       return
     }
 
-    setEventName(data.title.replace('Temas de palestras para a', ''))
+    setEventName(data.title.replace(/Temas de palestras para [ao]/, ''))
   }
 
   return { eventName, issueUrl }

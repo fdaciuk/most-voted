@@ -31,10 +31,7 @@ function useSubjects (issue) {
       tempSubjects = tempSubjects.concat(normalizeData(data))
 
       const linkHeader = xhr.getResponseHeader('link')
-      if (!linkHeader) {
-        return
-      }
-      const nextUrl = getNextUrl(linkHeader)
+      const nextUrl = linkHeader ? getNextUrl(linkHeader) : null
       fetchDataInternal(nextUrl)
     }
 
@@ -62,7 +59,7 @@ function useSubjects (issue) {
 function normalizeData (data) {
   const normalizedData = data.map((item) => ({
     id: item.id,
-    title: item.body.replace(/\[(.+)(?:\s+)?\].+/, '$1'),
+    title: item.body,
     votes: item.reactions['+1']
   }))
 

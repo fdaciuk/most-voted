@@ -8,6 +8,7 @@ function App () {
   const [issue, setIssue] = useState(null)
 
   useEffect(() => {
+    console.log('search:', getIssueUrl(window.location.search))
     setIssue(getIssueUrl(window.location.search))
   }, [])
 
@@ -25,7 +26,7 @@ function getIssueUrl (search) {
   }
 
   return decodeURIComponent(search)
-    .replace(/\?issueUrl=.+github\.com\/(.+)$/, '$1')
+    .replace(/\?issueUrl=.+github\.com\/(.+)\?.+$/, '$1')
 }
 
 export default App

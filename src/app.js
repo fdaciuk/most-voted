@@ -26,7 +26,7 @@ function getIssueUrl (search) {
   }
 
   return decodeURIComponent(search)
-    .replace(/\?issueUrl=.+github\.com\/(.+)\?.+$/, '$1')
+    .replace(/\?issueUrl=.+github\.com\/(.+)(?:\?.+)?$/, '$1')
 }
 
 export default App

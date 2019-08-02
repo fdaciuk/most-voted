@@ -35,6 +35,7 @@ function MainPage ({ issue }) {
         <thead>
           <tr>
             <th>Votos</th>
+            <th>Criado por:</th>
             <th>Assunto</th>
           </tr>
         </thead>
@@ -43,6 +44,7 @@ function MainPage ({ issue }) {
           {subjects.map((subject) => (
             <tr key={subject.id}>
               <td>{subject.votes}</td>
+              <td>{subject.user}</td>
               <td>{subject.title}</td>
             </tr>
           ))}

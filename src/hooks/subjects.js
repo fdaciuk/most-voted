@@ -60,7 +60,8 @@ function normalizeData (data) {
   const normalizedData = data.map((item) => ({
     id: item.id,
     title: item.body,
-    votes: item.reactions['+1']
+    votes: item.reactions['+1'],
+    user: item.user.login,
   }))
 
   return normalizedData
